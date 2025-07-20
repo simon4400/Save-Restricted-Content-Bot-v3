@@ -293,42 +293,69 @@ async def process_msg(c, u, m, d, lt, uid, i):
                 
                 return 'Done (Large file).'
             
-            await c.edit_message_text(d, p.id, 'Uploading...')
-            st = time.time()
+await c.edit_message_text(d, p.id, 'Uploading...')
+st = time.time()
 
-            try:
-                if m.video or os.path.splitext(f)[1].lower() == '.mp4':
-                    mtd = await get_video_metadata(f)
-                    dur, h, w = mtd['duration'], mtd['width'], mtd['height']
-                    th = await screenshot(f, dur, d)
-                    await c.send_video(tcid, video=f, caption=ft if m.caption else None, 
-                                    thumb=th, width=w, height=h, duration=dur, 
-                                    progress=prog, progress_args=(c, d, p.id, st), 
-                                    reply_to_message_id=rtmid)
-                elif m.video_note:
-                    await c.send_video_note(tcid, video_note=f, progress=prog, 
-                                        progress_args=(c, d, p.id, st), reply_to_message_id=rtmid)
-                elif m.voice:
-                    await c.send_voice(tcid, f, progress=prog, progress_args=(c, d, p.id, st), 
-                                    reply_to_message_id=rtmid)
-                elif m.sticker:
-                    await c.send_sticker(tcid, m.sticker.file_id)
-                elif m.audio:
-                    await c.send_audio(tcid, audio=f, caption=ft if m.caption else None, 
-                                    thumb=th, progress=prog, progress_args=(c, d, p.id, st), 
-                                    reply_to_message_id=rtmid)
-                elif m.photo:
-                    await c.send_photo(tcid, photo=f, caption=ft if m.caption else None, 
-                                    progress=prog, progress_args=(c, d, p.id, st), 
-                                    reply_to_message_id=rtmid)
-                elif m.document:
-                    await c.send_document(tcid, document=f, caption=ft if m.caption else None, 
-                                        progress=prog, progress_args=(c, d, p.id, st), 
-                                        reply_to_message_id=rtmid)
-            except Exception as e:
-                await c.edit_message_text(d, p.id, f'Upload failed: {str(e)[:30]}')
-                if os.path.exists(f): os.remove(f)
-                return 'Failed.'
+try:
+    ext = os.path.splitext(f)[1].lower()  # get file extension
+
+    # Handle real video
+    if (m.video or ext in ['.mp4', '.mkv', '.avi']):
+        mtd = await get_video_metadata(f)
+        dur, h, w = mtd['duration'], mtd['width'], mtd['height']
+        th = await screenshot(f, dur, d)
+        await c.send_video(
+            tcid,
+            video=f,
+            caption=ft if m.caption else None,
+            thumb=th,
+            width=w,
+            height=h,
+            duration=dur,
+            progress=prog,
+            progress_args=(c, d, p.id, st),
+            reply_to_message_id=rtmid
+        )
+
+    # Handle audio
+    elif m.audio:
+        await c.send_audio(
+            tcid,
+            audio=f,
+            caption=ft if m.caption else None,
+            thumb=th,
+            progress=prog,
+            progress_args=(c, d, p.id, st),
+            reply_to_message_id=rtmid
+        )
+
+    # Handle photo
+    elif m.photo:
+        await c.send_photo(
+            tcid,
+            photo=f,
+            caption=ft if m.caption else None,
+            progress=prog,
+            progress_args=(c, d, p.id, st),
+            reply_to_message_id=rtmid
+        )
+
+    # Handle everything else (PDF/documents etc)
+    else:
+        await c.send_document(
+            tcid,
+            document=f,
+            caption=ft if m.caption else None,
+            progress=prog,
+            progress_args=(c, d, p.id, st),
+            reply_to_message_id=rtmid
+        )
+
+except Exception as e:
+    await c.edit_message_text(d, p.id, f'Upload failed: {str(e)[:30]}')
+    if os.path.exists(f):
+        os.remove(f)
+    return 'Failed.'
             
             os.remove(f)
             await c.delete_messages(d, p.id)

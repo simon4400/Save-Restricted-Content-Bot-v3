@@ -321,7 +321,7 @@ async def process_msg(c, u, m, d, lt, uid, i):
                     await c.send_photo(tcid, photo=f, caption=ft if m.caption else None, 
                                     progress=prog, progress_args=(c, d, p.id, st), 
                                     reply_to_message_id=rtmid)
-                else:
+                elif m.document:
                     await c.send_document(tcid, document=f, caption=ft if m.caption else None, 
                                         progress=prog, progress_args=(c, d, p.id, st), 
                                         reply_to_message_id=rtmid)
